@@ -17,6 +17,7 @@ type Consumer struct {
 
 //Config holds the configuration for consuming and processing the queue
 type Config struct {
+	AwsSession                  *session.Session
 	SqsMaxNumberOfMessages      int64
 	SqsMessageVisibilityTimeout int64
 	Receivers                   int
@@ -25,14 +26,9 @@ type Config struct {
 
 var sess *session.Session
 
-func init() {
-	sess = session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
-	}))
-}
-
 //New creates a new Queue consumer
 func New(queueURL string, handler func(m *sqs.Message) error, config *Config) Consumer {
+	sess = config.AwsSession
 	c := make(chan *sqs.Message)
 
 	r := Receiver{
