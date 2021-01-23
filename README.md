@@ -4,8 +4,8 @@ A package to easily create an AWS SQS message consumer
 
 ## Features
 
-* Configurable number of goroutines that poll messages from SQS
-* Backpressure
+- Configurable number of goroutines that poll messages from SQS
+- Backpressure
   - You can dinamically control the poll delay period by using the SetPollDelay function
 
 ## Usage
@@ -13,8 +13,14 @@ A package to easily create an AWS SQS message consumer
 ```golang
 func main() {
 	q := "http://localhost:4566/000000000000/my-queue"
+
+	sess := session.Must(session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	}))
+
 	c := consumer.New(q, handle,
 		&consumer.Config{
+			AwsSession:                  sess,
 			Receivers:                   1,
 			SqsMaxNumberOfMessages:      10,
 			SqsMessageVisibilityTimeout: 20,
@@ -27,6 +33,7 @@ func main() {
 func handle(m *sqs.Message) error {
   fmt.Println("Message Body:", *(m.Body))
   //emulate processing time
-  time.Sleep(time.Second * 2) 
+  time.Sleep(time.Second * 2)
   return nil
 }
+```
