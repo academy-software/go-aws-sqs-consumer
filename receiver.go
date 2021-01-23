@@ -1,21 +1,25 @@
 package consumer
 
 import (
-	"log"
-	"time"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"log"
+	"time"
 )
 
 //Receiver defines the struct that polls messages from AWS SQS
 type Receiver struct {
-	queueURL            string
-	channel             chan *sqs.Message
-	sess                *session.Session
-	visibilityTimeout   int64
-	maxNumberOfMessages int64
-	receiverTimeout     int
+	queueURL                string
+	channel                 chan *sqs.Message
+	sess                    *session.Session
+	visibilityTimeout       int64
+	maxNumberOfMessages     int64
+	pollDelayInMilliseconds int
+}
+
+func (r *Receiver) applyBackPressure() {
+	time.Sleep(time.Millisecond * time.Duration(r.pollDelayInMilliseconds))
 }
 
 func (r *Receiver) receiveMessages() {
@@ -44,6 +48,6 @@ func (r *Receiver) receiveMessages() {
 			}
 		}
 
-		time.Sleep(time.Millisecond * time.Duration(r.receiverTimeout))
+		r.applyBackPressure()
 	}
 }

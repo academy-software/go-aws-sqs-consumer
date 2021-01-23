@@ -1,9 +1,9 @@
 package consumer
 
 import (
-	"log"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"log"
 )
 
 //Consumer holds the consumer data
@@ -12,14 +12,15 @@ type Consumer struct {
 	channel  chan *sqs.Message
 	handler  func(m *sqs.Message) error
 	config   *Config
+	receiver Receiver
 }
 
 //Config holds the configuration for consuming and processing the queue
 type Config struct {
-	MaxNumberOfMessages      int64
-	NumberOfMessageReceivers int
-	VisibilityTimeout        int64
-	ReceiverTimeout          int
+	SqsMaxNumberOfMessages      int64
+	SqsMessageVisibilityTimeout int64
+	Receivers                   int
+	PollDelayInMilliseconds     int
 }
 
 var sess *session.Session
@@ -33,11 +34,22 @@ func init() {
 //New creates a new Queue consumer
 func New(queueURL string, handler func(m *sqs.Message) error, config *Config) Consumer {
 	c := make(chan *sqs.Message)
+
+	r := Receiver{
+		queueURL:                queueURL,
+		channel:                 c,
+		sess:                    sess,
+		visibilityTimeout:       config.SqsMessageVisibilityTimeout,
+		maxNumberOfMessages:     config.SqsMaxNumberOfMessages,
+		pollDelayInMilliseconds: config.PollDelayInMilliseconds,
+	}
+
 	return Consumer{
-		queueURL,
-		c,
-		handler,
-		config,
+		queueURL: queueURL,
+		channel:  c,
+		handler:  handler,
+		config:   config,
+		receiver: r,
 	}
 }
 
@@ -50,17 +62,8 @@ func (c *Consumer) Start() {
 
 // startReceivers starts N (defined in NumberOfMessageReceivers) goroutines to poll messages from SQS
 func (c *Consumer) startReceivers() {
-	r := Receiver{
-		queueURL:            c.queueURL,
-		channel:             c.channel,
-		sess:                sess,
-		visibilityTimeout:   c.config.VisibilityTimeout,
-		receiverTimeout:     c.config.ReceiverTimeout,
-		maxNumberOfMessages: c.config.MaxNumberOfMessages,
-	}
-
-	for i := 0; i < c.config.NumberOfMessageReceivers; i++ {
-		go r.receiveMessages()
+	for i := 0; i < c.config.Receivers; i++ {
+		go c.receiver.receiveMessages()
 	}
 }
 
@@ -76,4 +79,9 @@ func (c *Consumer) startProcessor() {
 	for m := range c.channel {
 		go p.processMessage(m)
 	}
+}
+
+//SetPollDelay increases time between message poll
+func (c *Consumer) SetPollDelay(delayBetweenPoolsInMilliseconds int) {
+	c.receiver.pollDelayInMilliseconds = delayBetweenPoolsInMilliseconds
 }

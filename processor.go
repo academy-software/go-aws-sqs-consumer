@@ -1,10 +1,10 @@
 package consumer
 
 import (
-	"log"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
+	"log"
 )
 
 //Processor defines the struct that processes messages from AWS SQS

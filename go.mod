@@ -1,4 +1,4 @@
-module sofwareacademy.dev/go-aws-sqs-consumer
+module softwareacademy.dev/go-aws-sqs-consumer
 
 go 1.15
 
