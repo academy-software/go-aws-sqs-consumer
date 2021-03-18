@@ -4,6 +4,9 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"log"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 //Consumer holds the consumer data
@@ -30,10 +33,14 @@ var sess *session.Session
 func New(queueURL string, handler func(m *sqs.Message) error, config *Config) Consumer {
 	sess = config.AwsSession
 	c := make(chan *sqs.Message)
+	shutdown := make(chan os.Signal, 1)
+
+	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	r := Receiver{
 		queueURL:                queueURL,
 		channel:                 c,
+		shutdown:                shutdown,
 		sess:                    sess,
 		visibilityTimeout:       config.SqsMessageVisibilityTimeout,
 		maxNumberOfMessages:     config.SqsMaxNumberOfMessages,
