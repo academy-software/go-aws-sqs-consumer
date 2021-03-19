@@ -1,3 +1,4 @@
+![Build & Tests](https://github.com/academy-software/go-aws-sqs-consumer/actions/workflows/go.yml/badge.svg)
 # Go SQS Consumer
 
 A package to easily create an AWS SQS message consumer
