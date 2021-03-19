@@ -72,10 +72,12 @@ func (c *Consumer) startReceivers() {
 
 // startProcessor starts a goroutine to handle each message from channel
 func (c *Consumer) startProcessor() {
+	queue := sqs.New(sess)
+
 	p := Processor{
 		queueURL: c.queueURL,
 		channel:  c.channel,
-		sess:     sess,
+		queue:    queue,
 		handler:  c.handler,
 	}
 

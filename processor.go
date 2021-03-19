@@ -2,7 +2,6 @@ package consumer
 
 import (
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
 	"log"
 )
@@ -11,7 +10,7 @@ import (
 type Processor struct {
 	queueURL string
 	channel  chan *sqs.Message
-	sess     *session.Session
+	queue    *sqs.SQS
 	handler  func(*sqs.Message) error
 }
 
@@ -22,9 +21,7 @@ func (p *Processor) processMessage(m *sqs.Message) {
 		return
 	}
 
-	queue := sqs.New(sess)
-
-	_, derr := queue.DeleteMessage(&sqs.DeleteMessageInput{
+	_, derr := p.queue.DeleteMessage(&sqs.DeleteMessageInput{
 		QueueUrl:      aws.String(p.queueURL),
 		ReceiptHandle: m.ReceiptHandle,
 	})
