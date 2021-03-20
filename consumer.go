@@ -15,7 +15,7 @@ type Consumer struct {
 	channel  chan *sqs.Message
 	handler  func(m *sqs.Message) error
 	config   *Config
-	receiver Receiver
+	receiver SqsReceiver
 }
 
 //Config holds the configuration for consuming and processing the queue
@@ -37,7 +37,7 @@ func New(queueURL string, handler func(m *sqs.Message) error, config *Config) Co
 
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
-	r := Receiver{
+	r := SqsReceiver{
 		queueURL:                queueURL,
 		channel:                 c,
 		shutdown:                shutdown,

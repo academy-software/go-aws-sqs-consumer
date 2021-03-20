@@ -9,8 +9,8 @@ import (
 	"time"
 )
 
-//Receiver defines the struct that polls messages from AWS SQS
-type Receiver struct {
+//SqsReceiver defines the struct that polls messages from AWS SQS
+type SqsReceiver struct {
 	queueURL                string
 	channel                 chan *sqs.Message
 	shutdown                chan os.Signal
@@ -20,11 +20,11 @@ type Receiver struct {
 	pollDelayInMilliseconds int
 }
 
-func (r *Receiver) applyBackPressure() {
+func (r *SqsReceiver) applyBackPressure() {
 	time.Sleep(time.Millisecond * time.Duration(r.pollDelayInMilliseconds))
 }
 
-func (r *Receiver) receiveMessages() {
+func (r *SqsReceiver) receiveMessages() {
 	queue := sqs.New(r.sess)
 	for {
 
