@@ -11,11 +11,11 @@ import (
 
 //Consumer holds the consumer data
 type Consumer struct {
-	queueURL string
-	channel  chan *sqs.Message
-	handler  func(m *sqs.Message) error
-	config   *Config
-	receiver SqsReceiver
+	queueURL        string
+	messagesChannel chan []*sqs.Message
+	handler         func(m *sqs.Message) error
+	config          *Config
+	receiver        SqsReceiver
 }
 
 //Config holds the configuration for consuming and processing the queue
@@ -32,14 +32,14 @@ var sess *session.Session
 //New creates a new Queue consumer
 func New(queueURL string, handler func(m *sqs.Message) error, config *Config) Consumer {
 	sess = config.AwsSession
-	c := make(chan *sqs.Message)
+	c := make(chan []*sqs.Message)
 	shutdown := make(chan os.Signal, 1)
 
 	signal.Notify(shutdown, syscall.SIGINT, syscall.SIGTERM)
 
 	r := SqsReceiver{
 		queueURL:                queueURL,
-		channel:                 c,
+		messagesChannel:         c,
 		shutdown:                shutdown,
 		sess:                    sess,
 		visibilityTimeout:       config.SqsMessageVisibilityTimeout,
@@ -48,11 +48,11 @@ func New(queueURL string, handler func(m *sqs.Message) error, config *Config) Co
 	}
 
 	return Consumer{
-		queueURL: queueURL,
-		channel:  c,
-		handler:  handler,
-		config:   config,
-		receiver: r,
+		queueURL:        queueURL,
+		messagesChannel: c,
+		handler:         handler,
+		config:          config,
+		receiver:        r,
 	}
 }
 
@@ -70,19 +70,18 @@ func (c *Consumer) startReceivers() {
 	}
 }
 
-// startProcessor starts a goroutine to handle each message from channel
+// startProcessor starts a goroutine to handle each message from messagesChannel
 func (c *Consumer) startProcessor() {
 	queue := sqs.New(sess)
 
 	p := Processor{
 		queueURL: c.queueURL,
-		channel:  c.channel,
 		queue:    queue,
 		handler:  c.handler,
 	}
 
-	for m := range c.channel {
-		go p.processMessage(m)
+	for messages := range c.messagesChannel {
+		go p.processMessages(messages)
 	}
 }
 

@@ -12,7 +12,7 @@ import (
 //SqsReceiver defines the struct that polls messages from AWS SQS
 type SqsReceiver struct {
 	queueURL                string
-	channel                 chan *sqs.Message
+	messagesChannel         chan []*sqs.Message
 	shutdown                chan os.Signal
 	sess                    *session.Session
 	visibilityTimeout       int64
@@ -31,10 +31,10 @@ func (r *SqsReceiver) receiveMessages() {
 		select {
 		case <-r.shutdown:
 			log.Println("Shutting down message receiver")
-			close(r.channel)
+			close(r.messagesChannel)
 			return
 		default:
-			msgResult, err := queue.ReceiveMessage(&sqs.ReceiveMessageInput{
+			result, err := queue.ReceiveMessage(&sqs.ReceiveMessageInput{
 				AttributeNames: []*string{
 					aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
 				},
@@ -51,10 +51,9 @@ func (r *SqsReceiver) receiveMessages() {
 				return
 			}
 
-			if len(msgResult.Messages) > 0 {
-				for _, m := range msgResult.Messages {
-					r.channel <- m
-				}
+			if len(result.Messages) > 0 {
+				messages := result.Messages
+				r.messagesChannel <- messages
 			}
 
 			r.applyBackPressure()
