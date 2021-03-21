@@ -1,7 +1,7 @@
 version: '3'
 services:
   localstack:
-    image: localstack/localstack
+    image: localstack/localstack-light
     environment:
       - SERVICES=sqs
       - DOCKER_HOST=unix:///var/run/docker.sock
