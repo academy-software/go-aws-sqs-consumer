@@ -10,6 +10,13 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
+    services:
+      localstack:
+        image: localstack/localstack-light
+        env:
+          SERVICES: sqs
+        ports:
+          - "4566:4566" # sqs
     steps:
     - uses: actions/checkout@v2
 
@@ -18,11 +25,11 @@ jobs:
       with:
         go-version: 1.15
         
-    - name: AWS cli install action
+    - name: AWS CLI installation
       uses: chrislennon/action-aws-cli@1.1
 
     - name: Build
       run: go build -v ./...
 
     - name: Test
-      run: make test
+      run: go test
